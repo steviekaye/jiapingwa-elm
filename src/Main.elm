@@ -51,7 +51,7 @@ viewBooks book =
     , div [ class "book-year" ] [ text (String.fromInt book.year ) ]
     , div [ class "book-title-CN" ] [ text book.titleCN ]
     , div [ class "book-title-pinyin" ] [text " (", text book.titlePinyin, text ")" ]
-    , div [ class "book-price" ] [ text (String.fromInt book.price ) ]
+    , div [ class "book-price" ] [ text "$", text (String.fromInt book.price ) ]
     ]
     ]
 
