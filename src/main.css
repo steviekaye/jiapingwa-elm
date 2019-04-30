@@ -1,0 +1,83 @@
+/*
+  elm-hot creates an additional div wrapper around the app to make HMR possible.
+  This could break styling in development mode if you are using Elm UI.
+
+  More context in the issue:
+    https://github.com/halfzebra/create-elm-app/issues/320
+*/
+[data-elm-hot="true"] {
+  height: inherit;
+}
+
+body {
+  /* font-family: 'Source Sans Pro', 'Trebuchet MS', 'Lucida Grande', 'Bitstream Vera Sans', 'Helvetica Neue', sans-serif;
+  margin: 0;
+  text-align: center;
+  color: #293c4b; */
+}
+
+@media screen and (min-width: 768px) {
+  body {
+    margin: 0 auto;
+    padding: 0.5em;
+    max-width: 60%;
+  }
+
+  .book-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+h1 {
+  font-size: 30px;
+}
+
+img {
+  object-fit: contain;
+  height: 200px;
+}
+
+.book {
+  display: flex;
+  flex-direction: row;
+  height: 200px;
+  padding: 1rem;
+  border: 1px solid #b62d38;
+  border-radius: 15px;
+  margin: 10px;
+}
+
+.book-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.book-info {
+  margin-left: 1em;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.book-title {
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+.book-year {
+  font-size: 1.2rem;
+}
+
+.book-title-CN {
+  color: #b62d38;
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+.book-title-pinyin {
+}
+
+.book-price {
+  margin-top:auto;
+}
