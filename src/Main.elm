@@ -1,17 +1,18 @@
-module Main exposing (..)
+module Main exposing (Model, Msg(..), book, init, main, update, view)
 
-import Browser
-import Html exposing (Html, text, div, h1, img, ul, li)
-import Html.Attributes exposing (src, class, alt)
 import BookData exposing (Book, allBooks)
+import Browser
+import Html exposing (Html, div, h1, img, li, text, ul)
+import Html.Attributes exposing (alt, class, src)
+
+
 
 ---- MODEL ----
 
 
 type alias Model =
-    {
+    {}
 
-  }
 
 init : ( Model, Cmd Msg )
 init =
@@ -38,22 +39,23 @@ update msg model =
 view : Model -> Html Msg
 view model =
     div []
-        [ div [ class "book-list"] ( List.map book allBooks )
-
+        [ div [ class "book-list" ] (List.map book allBooks)
         ]
+
 
 book : Book -> Html Msg
 book b =
-   div [ class "book" ]
-    [ div [] [ img [src b.cover, alt b.title ] [] ]
-    , div [ class "book-info"] [
-      div [ class "book-title" ] [ text b.title ]
-    , div [ class "book-year" ] [ text <| String.fromInt b.year ]
-    , div [ class "book-title-CN" ] [ text b.titleCN ]
-    , div [ class "book-title-pinyin" ] [text <| " (" ++ b.titlePinyin ++ ")" ]
-    , div [ class "book-price" ] [ text <| "$" ++ String.fromInt b.price ]
-    ]
-    ]
+    div [ class "book" ]
+        [ div [] [ img [ src b.cover, alt b.title ] [] ]
+        , div [ class "book-info" ]
+            [ div [ class "book-title" ] [ text b.title ]
+            , div [ class "book-year" ] [ text <| String.fromInt b.year ]
+            , div [ class "book-title-CN" ] [ text b.titleCN ]
+            , div [ class "book-title-pinyin" ] [ text <| " (" ++ b.titlePinyin ++ ")" ]
+            , div [ class "book-price" ] [ text <| "$" ++ String.fromInt b.price ]
+            ]
+        ]
+
 
 
 ---- PROGRAM ----
