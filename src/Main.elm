@@ -11,12 +11,14 @@ import Html.Attributes exposing (alt, class, src)
 
 
 type alias Model =
-    {}
+    { books : List Book }
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( {}, Cmd.none )
+    ( { books = allBooks }
+    , Cmd.none
+    )
 
 
 
@@ -39,7 +41,7 @@ update msg model =
 view : Model -> Html Msg
 view model =
     div []
-        [ div [ class "book-list" ] (List.map book allBooks)
+        [ div [ class "book-list" ] (List.map book model.books)
         ]
 
 
