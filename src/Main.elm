@@ -3,7 +3,7 @@ module Main exposing (..)
 import Browser
 import Html exposing (Html, text, div, h1, img, ul, li)
 import Html.Attributes exposing (src, class, alt)
-import BookData exposing (Book, allbooks)
+import BookData exposing (Book, allBooks)
 
 ---- MODEL ----
 
@@ -38,20 +38,20 @@ update msg model =
 view : Model -> Html Msg
 view model =
     div []
-        [ div [ class "book-list"] ( List.map viewBooks allbooks.books )
+        [ div [ class "book-list"] ( List.map book allBooks )
 
         ]
 
-viewBooks : Book -> Html Msg
-viewBooks book =
+book : Book -> Html Msg
+book b =
    div [ class "book" ]
-    [ div [] [ img [src book.cover, alt book.title ] [] ]
+    [ div [] [ img [src b.cover, alt b.title ] [] ]
     , div [ class "book-info"] [
-      div [ class "book-title" ] [ text book.title ]
-    , div [ class "book-year" ] [ text (String.fromInt book.year ) ]
-    , div [ class "book-title-CN" ] [ text book.titleCN ]
-    , div [ class "book-title-pinyin" ] [text " (", text book.titlePinyin, text ")" ]
-    , div [ class "book-price" ] [ text "$", text (String.fromInt book.price ) ]
+      div [ class "book-title" ] [ text b.title ]
+    , div [ class "book-year" ] [ text <| String.fromInt b.year ]
+    , div [ class "book-title-CN" ] [ text b.titleCN ]
+    , div [ class "book-title-pinyin" ] [text <| " (" ++ b.titlePinyin ++ ")" ]
+    , div [ class "book-price" ] [ text <| "$" ++ String.fromInt b.price ]
     ]
     ]
 
