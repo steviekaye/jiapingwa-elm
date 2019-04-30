@@ -48,7 +48,7 @@ view model =
 book : Book -> Html Msg
 book b =
     div [ class "book" ]
-        [ div [] [ img [ src b.cover, alt b.title ] [] ]
+        [ div [] [ img [ src <| "%PUBLIC_URL%" ++ b.cover, alt b.title ] [] ]
         , div [ class "book-info" ]
             [ div [ class "book-title" ] [ text b.title ]
             , div [ class "book-year" ] [ text <| String.fromInt b.year ]
