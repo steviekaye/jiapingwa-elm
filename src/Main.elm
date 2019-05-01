@@ -2,8 +2,10 @@ module Main exposing (Model, Msg(..), book, init, main, update, view)
 
 import BookData exposing (Book, allBooks)
 import Browser
-import Html exposing (Html, div, h1, img, li, text, ul)
+import Html exposing (Html, button, div, h1, img, li, text, ul)
 import Html.Attributes exposing (alt, class, src)
+import Html.Events exposing (onClick)
+import List exposing (append, map, sum)
 
 
 
@@ -11,12 +13,31 @@ import Html.Attributes exposing (alt, class, src)
 
 
 type alias Model =
-    { books : List Book }
+    { books : List Book, cart : Cart }
+
+
+type alias Cart =
+    List Book
+
+
+add : Cart -> Book -> Cart
+add cart b =
+    append cart [ b ]
+
+
+subtotal : Cart -> Int
+subtotal cart =
+    sum (map bookSubtotal cart)
+
+
+bookSubtotal : Book -> Int
+bookSubtotal b =
+    b.price
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( { books = allBooks }
+    ( { books = allBooks, cart = [] }
     , Cmd.none
     )
 
@@ -25,13 +46,20 @@ init =
 ---- UPDATE ----
 
 
-type Msg
-    = NoOp
+type
+    Msg
+    -- = NoOp
+    = Add Book
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    ( model, Cmd.none )
+    -- ( model, Cmd.none )
+    case msg of
+        Add b ->
+            ( { model | cart = add model.cart b }
+            , Cmd.none
+            )
 
 
 
@@ -55,6 +83,7 @@ book b =
             , div [ class "book-title-CN" ] [ text b.titleCN ]
             , div [ class "book-title-pinyin" ] [ text <| " (" ++ b.titlePinyin ++ ")" ]
             , div [ class "book-price" ] [ text <| "$" ++ String.fromInt b.price ]
+            , button [ onClick (Add b) ] [ text "Add to Cart" ]
             ]
         ]
 
