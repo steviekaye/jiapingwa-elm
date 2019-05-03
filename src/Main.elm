@@ -69,12 +69,21 @@ update msg model =
 view : Model -> Html Msg
 view model =
     div []
-        [ div [ class "book-list" ] (List.map book model.books)
+        [ div [ class "book-list" ] (List.map (\b -> book b model.cart) model.books)
         ]
 
 
-book : Book -> Html Msg
-book b =
+isInCart : Book -> Cart -> Bool
+isInCart b c =
+    List.any (\{ bookID } -> bookID == b.bookID) c
+
+
+book : Book -> Cart -> Html Msg
+book b c =
+    let
+        inCart =
+            isInCart b c
+    in
     div [ class "book" ]
         [ div [] [ img [ src <| "%PUBLIC_URL%" ++ b.cover, alt b.title ] [] ]
         , div [ class "book-info" ]
@@ -83,7 +92,31 @@ book b =
             , div [ class "book-title-CN" ] [ text b.titleCN ]
             , div [ class "book-title-pinyin" ] [ text <| " (" ++ b.titlePinyin ++ ")" ]
             , div [ class "book-price" ] [ text <| "$" ++ String.fromInt b.price ]
-            , button [ onClick (Add b) ] [ text "Add to Cart" ]
+            , button
+                [ class
+                    (if inCart then
+                        "btn remove"
+
+                     else
+                        "btn add"
+                    )
+                , onClick
+                    (if inCart then
+                        Add b
+                        -- Remove b
+
+                     else
+                        Add b
+                    )
+                ]
+                [ text
+                    (if inCart then
+                        "Remove"
+
+                     else
+                        "Add to Cart"
+                    )
+                ]
             ]
         ]
 

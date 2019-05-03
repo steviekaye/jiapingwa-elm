@@ -81,3 +81,8 @@ img {
 .book-price {
   margin-top:auto;
 }
+
+.remove {
+  background-color: red;
+  color: black;
+}
