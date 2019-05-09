@@ -86,3 +86,11 @@ img {
   background-color: red;
   color: black;
 }
+
+.buttons {
+  margin-top:auto;
+}
+
+.btn {
+  width: 200px;
+}

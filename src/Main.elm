@@ -2,7 +2,7 @@ module Main exposing (Model, Msg(..), init, main, update, view)
 
 import BookData exposing (Book, allBooks)
 import Browser
-import Html exposing (Html, button, div, h1, img, li, text, ul)
+import Html exposing (Html, button, div, h1, img, li, table, td, text, th, thead, tr, ul)
 import Html.Attributes exposing (alt, class, src)
 import Html.Events exposing (onClick)
 import List exposing (append, filter, map, sum)
@@ -30,11 +30,10 @@ type alias BookID =
 
 add : Cart -> BookID -> Cart
 add cart bookID =
-    let
-        _ =
-            Debug.log "Logging b" bookID
-    in
-    -- append cart [ bookID ]
+    -- let
+    --     _ =
+    --         Debug.log "Logging b" bookID
+    -- in
     case inCart bookID cart of
         True ->
             let
@@ -53,21 +52,33 @@ add cart bookID =
 
 remove : Cart -> BookID -> Cart
 remove cart bookID =
-    -- List.any (\cartItem -> cartItem /= bookID) cart
-    cart
+    List.filter (\cartItem -> cartItem.id /= bookID) cart
 
 
+increment : Cart -> BookID -> Cart
+increment cart bookID =
+    let
+        incrementQuantity cartItem =
+            if cartItem.id == bookID then
+                { cartItem | quantity = cartItem.quantity + 1 }
 
--- subtotal : Cart -> Int
--- subtotal cart =
---     -- sum (map bookSubtotal cart)
---     -- sum (map .price cart)
---     sum (map (\item -> item.price) cart)
+            else
+                cartItem
+    in
+    List.map (\item -> incrementQuantity item) cart
 
 
-bookSubtotal : Book -> Int
-bookSubtotal b =
-    b.price
+decrement : Cart -> BookID -> Cart
+decrement cart bookID =
+    let
+        decrementQuantity cartItem =
+            if cartItem.id == bookID then
+                { cartItem | quantity = cartItem.quantity - 1 }
+
+            else
+                cartItem
+    in
+    List.map (\item -> decrementQuantity item) cart
 
 
 init : ( Model, Cmd Msg )
@@ -75,6 +86,20 @@ init =
     ( { books = allBooks, cart = [] }
     , Cmd.none
     )
+
+
+getQuantity : Cart -> BookID -> Int
+getQuantity cart bookID =
+    let
+        result =
+            List.filter (\c -> c.id == bookID) cart
+    in
+    case List.head result of
+        Nothing ->
+            0
+
+        Just c ->
+            c.quantity
 
 
 
@@ -86,6 +111,8 @@ type
     -- = NoOp
     = Add BookID
     | Remove BookID
+    | Increment BookID
+    | Decrement BookID
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -99,6 +126,16 @@ update msg model =
 
         Remove b ->
             ( { model | cart = remove model.cart b }
+            , Cmd.none
+            )
+
+        Increment b ->
+            ( { model | cart = increment model.cart b }
+            , Cmd.none
+            )
+
+        Decrement b ->
+            ( { model | cart = decrement model.cart b }
             , Cmd.none
             )
 
@@ -138,36 +175,73 @@ bookComponent book cart =
             , div [ class "book-title-CN" ] [ text book.titleCN ]
             , div [ class "book-title-pinyin" ] [ text <| " (" ++ book.titlePinyin ++ ")" ]
             , div [ class "book-price" ] [ text <| "$" ++ String.fromInt book.price ]
-            , button
+            ]
+        , div [ class "buttons" ]
+            [ button
                 [ class buttonClass
                 , onClick clickEvent
                 ]
                 [ text buttonText
                 ]
+            , button [ onClick (Decrement book.bookID) ] [ text "-" ]
+            , text (String.fromInt (getQuantity cart book.bookID))
+            , button [ onClick (Increment book.bookID) ] [ text "+" ]
             ]
         ]
+
+
+
+-- cartView : Model -> Html Msg
+-- cartView model =
+--     div []
+--         [ div []
+--             [ if List.isEmpty model.cart then
+--                 div [ class "remove" ]
+--                     [ text "Cart is empty" ]
+--
+--               else
+--                 div [] (List.map (\c -> cartItemView c model.books) model.cart)
+--             ]
+--         , div [] [ text <| "Subtotal: $" ++ String.fromInt (cartTotalView model) ]
+--         ]
 
 
 cartView : Model -> Html Msg
 cartView model =
     div []
-        [ div []
-            [ if List.isEmpty model.cart then
-                div [ class "remove" ]
-                    [ text "Cart is empty" ]
-
-              else
-                div [] (List.map (\c -> cartItemView c model.books) model.cart)
-            ]
-        , div [] [ text <| "$" ++ String.fromInt (cartTotalView model) ]
+        [ table []
+            ([ thead []
+                [ th [] [ text "Item" ]
+                , th [] [ text "Quantity" ]
+                , th [] [ text "Amount" ]
+                ]
+             ]
+                ++ List.map (\c -> cartItemView c model.books) model.cart
+                ++ [ tr
+                        []
+                        [ td [] [ text "Total" ]
+                        , td [] []
+                        , td [] [ text <| "$" ++ String.fromInt (cartTotalView model) ]
+                        ]
+                   ]
+            )
         ]
+
+
+
+-- cartItemView : CartItem -> List Book -> Html Msg
+-- cartItemView cartItem bookList =
+--     div []
+--         [ div [] [ text <| getName cartItem.id bookList ++ " x" ++ String.fromInt cartItem.quantity ++ " " ++ "$" ++ String.fromInt (getPrice cartItem.id cartItem.quantity bookList) ]
+--         ]
 
 
 cartItemView : CartItem -> List Book -> Html Msg
 cartItemView cartItem bookList =
-    div []
-        [ div [] [ text (getName cartItem.id bookList) ]
-        , div [] [ text <| "$" ++ String.fromInt (getPrice cartItem.id cartItem.quantity bookList) ]
+    tr []
+        [ td [] [ text <| getName cartItem.id bookList ]
+        , td [] [ text (String.fromInt cartItem.quantity) ]
+        , td [] [ text <| "$" ++ String.fromInt (getPrice cartItem.id cartItem.quantity bookList) ]
         ]
 
 
