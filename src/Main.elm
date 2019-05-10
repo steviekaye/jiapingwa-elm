@@ -6,6 +6,7 @@ import Html exposing (Html, button, div, h1, img, li, table, td, text, th, thead
 import Html.Attributes exposing (alt, class, src)
 import Html.Events exposing (onClick)
 import List exposing (append, filter, map, sum)
+import List.Extra exposing (setIf)
 
 
 
@@ -28,12 +29,8 @@ type alias BookID =
     Int
 
 
-add : Cart -> BookID -> Cart
-add cart bookID =
-    -- let
-    --     _ =
-    --         Debug.log "Logging b" bookID
-    -- in
+addToCart : BookID -> Cart -> Cart
+addToCart bookID cart =
     case inCart bookID cart of
         True ->
             let
@@ -46,12 +43,13 @@ add cart bookID =
             in
             List.map (\item -> incrementQuantity item) cart
 
+        -- setIf (\cartItem -> cartItem.id == bookID) { cartItem | quantity = cartItem.quantity + 1 } cart
         False ->
             append cart [ { id = bookID, quantity = 1 } ]
 
 
-remove : Cart -> BookID -> Cart
-remove cart bookID =
+removeFromCart : BookID -> Cart -> Cart
+removeFromCart bookID cart =
     List.filter (\cartItem -> cartItem.id /= bookID) cart
 
 
@@ -73,7 +71,12 @@ decrement cart bookID =
     let
         decrementQuantity cartItem =
             if cartItem.id == bookID then
-                { cartItem | quantity = cartItem.quantity - 1 }
+                if cartItem.quantity > 1 then
+                    { cartItem | quantity = cartItem.quantity - 1 }
+
+                else
+                    cartItem
+                --to change to remove items with 0 or less quant
 
             else
                 cartItem
@@ -88,27 +91,31 @@ init =
     )
 
 
-getQuantity : Cart -> BookID -> Int
-getQuantity cart bookID =
-    let
-        result =
-            List.filter (\c -> c.id == bookID) cart
-    in
-    case List.head result of
+getQuantity : BookID -> Cart -> Int
+getQuantity bookID cart =
+    case find (\c -> c.id == bookID) cart of
         Nothing ->
             0
 
-        Just c ->
-            c.quantity
+        Just r ->
+            r.quantity
+
+
+find : (a -> Bool) -> List a -> Maybe a
+find predicate list =
+    List.filter predicate list |> List.head
+
+
+inCart : BookID -> Cart -> Bool
+inCart bookID cart =
+    List.any (\cartItem -> cartItem.id == bookID) cart
 
 
 
 ---- UPDATE ----
 
 
-type
-    Msg
-    -- = NoOp
+type Msg
     = Add BookID
     | Remove BookID
     | Increment BookID
@@ -117,15 +124,14 @@ type
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    -- ( model, Cmd.none )
     case msg of
         Add b ->
-            ( { model | cart = add model.cart b }
+            ( { model | cart = addToCart b model.cart }
             , Cmd.none
             )
 
         Remove b ->
-            ( { model | cart = remove model.cart b }
+            ( { model | cart = removeFromCart b model.cart }
             , Cmd.none
             )
 
@@ -150,11 +156,6 @@ view model =
         [ div [ class "book-list" ] (List.map (\b -> bookComponent b model.cart) model.books)
         , div [ class "cart" ] [ cartView model ]
         ]
-
-
-inCart : BookID -> Cart -> Bool
-inCart bookID cart =
-    List.any (\cartItem -> cartItem.id == bookID) cart
 
 
 bookComponent : Book -> Cart -> Html Msg
@@ -184,26 +185,10 @@ bookComponent book cart =
                 [ text buttonText
                 ]
             , button [ onClick (Decrement book.bookID) ] [ text "-" ]
-            , text (String.fromInt (getQuantity cart book.bookID))
+            , text (String.fromInt (getQuantity book.bookID cart))
             , button [ onClick (Increment book.bookID) ] [ text "+" ]
             ]
         ]
-
-
-
--- cartView : Model -> Html Msg
--- cartView model =
---     div []
---         [ div []
---             [ if List.isEmpty model.cart then
---                 div [ class "remove" ]
---                     [ text "Cart is empty" ]
---
---               else
---                 div [] (List.map (\c -> cartItemView c model.books) model.cart)
---             ]
---         , div [] [ text <| "Subtotal: $" ++ String.fromInt (cartTotalView model) ]
---         ]
 
 
 cartView : Model -> Html Msg
@@ -228,14 +213,6 @@ cartView model =
         ]
 
 
-
--- cartItemView : CartItem -> List Book -> Html Msg
--- cartItemView cartItem bookList =
---     div []
---         [ div [] [ text <| getName cartItem.id bookList ++ " x" ++ String.fromInt cartItem.quantity ++ " " ++ "$" ++ String.fromInt (getPrice cartItem.id cartItem.quantity bookList) ]
---         ]
-
-
 cartItemView : CartItem -> List Book -> Html Msg
 cartItemView cartItem bookList =
     tr []
@@ -247,30 +224,22 @@ cartItemView cartItem bookList =
 
 getName : BookID -> List Book -> String
 getName bookID bookList =
-    let
-        result =
-            List.filter (\b -> b.bookID == bookID) bookList
-    in
-    case List.head result of
+    case find (\b -> b.bookID == bookID) bookList of
         Nothing ->
             ""
 
-        Just b ->
-            b.title
+        Just r ->
+            r.title
 
 
 getPrice : BookID -> Int -> List Book -> Int
 getPrice bookID quant bookList =
-    let
-        result =
-            List.filter (\b -> b.bookID == bookID) bookList
-    in
-    case List.head result of
+    case find (\b -> b.bookID == bookID) bookList of
         Nothing ->
             0
 
-        Just b ->
-            b.price * quant
+        Just r ->
+            r.price * quant
 
 
 cartTotalView : Model -> Int
@@ -279,19 +248,7 @@ cartTotalView model =
 
 
 
--- subtotal cart =
---     -- sum (map bookSubtotal cart)
---     -- sum (map .price cart)
---     sum (map (\item -> item.price) cart)
--- let
---     incrementQuantity cartItem =
---         if cartItem.id == bookID then
---             { cartItem | quantity = cartItem.quantity + 1 }
---
---         else
---             cartItem
--- in
--- List.map (\item -> incrementQuantity item) cart
+-- List.foldr (\item -> getPrice item.id item.quantity model.books) 0 model.cart
 ---- PROGRAM ----
 
 
