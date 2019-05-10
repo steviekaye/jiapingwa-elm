@@ -2,11 +2,11 @@ module Main exposing (Model, Msg(..), init, main, update, view)
 
 import BookData exposing (Book, allBooks)
 import Browser
-import Html exposing (Html, button, div, h1, img, li, table, td, text, th, thead, tr, ul)
+import Html exposing (Html, button, div, img, table, td, text, th, thead, tr)
 import Html.Attributes exposing (alt, class, src)
 import Html.Events exposing (onClick)
-import List exposing (append, filter, map, sum)
-import List.Extra as ListX exposing (setIf)
+import List exposing (filter, map, sum)
+import List.Extra as ListX exposing (find, setIf)
 
 
 
@@ -29,10 +29,6 @@ type alias BookID =
     Int
 
 
-
--- setIf : (a -> Bool) -> a -> List a -> List a
-
-
 removeFromCart : BookID -> Cart -> Cart
 removeFromCart bookID cart =
     List.filter (\cartItem -> cartItem.id /= bookID) cart
@@ -42,7 +38,7 @@ addToCart : BookID -> Cart -> Cart
 addToCart bookID cart =
     let
         mCartItem =
-            find (\cartItem -> cartItem.id == bookID) cart
+            ListX.find (\cartItem -> cartItem.id == bookID) cart
     in
     case mCartItem of
         Just cartItem ->
@@ -61,7 +57,7 @@ increment : BookID -> Cart -> Cart
 increment bookID cart =
     let
         mCartItem =
-            find (\cartItem -> cartItem.id == bookID) cart
+            ListX.find (\cartItem -> cartItem.id == bookID) cart
     in
     case mCartItem of
         Just cartItem ->
@@ -75,7 +71,7 @@ decrement : BookID -> Cart -> Cart
 decrement bookID cart =
     let
         mCartItem =
-            find (\cartItem -> cartItem.id == bookID) cart
+            ListX.find (\cartItem -> cartItem.id == bookID) cart
     in
     case mCartItem of
         Just cartItem ->
@@ -92,17 +88,12 @@ decrement bookID cart =
 
 getQuantity : BookID -> Cart -> Int
 getQuantity bookID cart =
-    case find (\c -> c.id == bookID) cart of
+    case ListX.find (\c -> c.id == bookID) cart of
         Nothing ->
             0
 
         Just r ->
             r.quantity
-
-
-find : (a -> Bool) -> List a -> Maybe a
-find predicate list =
-    List.filter predicate list |> List.head
 
 
 findBook : CartItem -> List Book -> Maybe Book
@@ -264,15 +255,6 @@ cartTotalView model =
 
 
 
--- foldl : (a -> b -> b) -> b -> List a -> b
---
--- Reduce a list from the left.
---
--- foldl (+)  0  [1,2,3] == 6
--- foldl (::) [] [1,2,3] == [3,2,1]
---
--- List.sum (List.map (\item -> getPrice item.id item.quantity model.books) model.cart)
--- List.foldr (\item -> getPrice item.id item.quantity model.books) 0 model.cart
 ---- PROGRAM ----
 
 
