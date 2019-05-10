@@ -6,7 +6,7 @@ import Html exposing (Html, button, div, h1, img, li, table, td, text, th, thead
 import Html.Attributes exposing (alt, class, src)
 import Html.Events exposing (onClick)
 import List exposing (append, filter, map, sum)
-import List.Extra exposing (setIf)
+import List.Extra as ListX exposing (setIf)
 
 
 
@@ -29,23 +29,8 @@ type alias BookID =
     Int
 
 
-addToCart : BookID -> Cart -> Cart
-addToCart bookID cart =
-    case inCart bookID cart of
-        True ->
-            let
-                incrementQuantity cartItem =
-                    if cartItem.id == bookID then
-                        { cartItem | quantity = cartItem.quantity + 1 }
 
-                    else
-                        cartItem
-            in
-            List.map (\item -> incrementQuantity item) cart
-
-        -- setIf (\cartItem -> cartItem.id == bookID) { cartItem | quantity = cartItem.quantity + 1 } cart
-        False ->
-            append cart [ { id = bookID, quantity = 1 } ]
+-- setIf : (a -> Bool) -> a -> List a -> List a
 
 
 removeFromCart : BookID -> Cart -> Cart
@@ -53,42 +38,56 @@ removeFromCart bookID cart =
     List.filter (\cartItem -> cartItem.id /= bookID) cart
 
 
-increment : Cart -> BookID -> Cart
-increment cart bookID =
+addToCart : BookID -> Cart -> Cart
+addToCart bookID cart =
     let
-        incrementQuantity cartItem =
-            if cartItem.id == bookID then
-                { cartItem | quantity = cartItem.quantity + 1 }
-
-            else
-                cartItem
+        mCartItem =
+            find (\cartItem -> cartItem.id == bookID) cart
     in
-    List.map (\item -> incrementQuantity item) cart
+    case mCartItem of
+        Just cartItem ->
+            cart
+
+        -- error message?
+        Nothing ->
+            { id = bookID, quantity = 1 } :: cart
 
 
-decrement : Cart -> BookID -> Cart
-decrement cart bookID =
+
+-- could just be the above line if you are certain this cannot be in cart
+
+
+increment : BookID -> Cart -> Cart
+increment bookID cart =
     let
-        decrementQuantity cartItem =
-            if cartItem.id == bookID then
-                if cartItem.quantity > 1 then
-                    { cartItem | quantity = cartItem.quantity - 1 }
-
-                else
-                    cartItem
-                --to change to remove items with 0 or less quant
-
-            else
-                cartItem
+        mCartItem =
+            find (\cartItem -> cartItem.id == bookID) cart
     in
-    List.map (\item -> decrementQuantity item) cart
+    case mCartItem of
+        Just cartItem ->
+            ListX.setIf (\item -> item.id == bookID) { cartItem | quantity = cartItem.quantity + 1 } cart
+
+        Nothing ->
+            cart
 
 
-init : ( Model, Cmd Msg )
-init =
-    ( { books = allBooks, cart = [] }
-    , Cmd.none
-    )
+decrement : BookID -> Cart -> Cart
+decrement bookID cart =
+    let
+        mCartItem =
+            find (\cartItem -> cartItem.id == bookID) cart
+    in
+    case mCartItem of
+        Just cartItem ->
+            case cartItem.quantity > 1 of
+                True ->
+                    ListX.setIf (\item -> item.id == bookID) { cartItem | quantity = cartItem.quantity - 1 } cart
+
+                False ->
+                    removeFromCart bookID cart
+
+        Nothing ->
+            cart
 
 
 getQuantity : BookID -> Cart -> Int
@@ -106,9 +105,21 @@ find predicate list =
     List.filter predicate list |> List.head
 
 
+findBook : CartItem -> List Book -> Maybe Book
+findBook cartItem books =
+    find (\book -> book.bookID == cartItem.id) books
+
+
 inCart : BookID -> Cart -> Bool
 inCart bookID cart =
     List.any (\cartItem -> cartItem.id == bookID) cart
+
+
+init : ( Model, Cmd Msg )
+init =
+    ( { books = allBooks, cart = [] }
+    , Cmd.none
+    )
 
 
 
@@ -136,12 +147,12 @@ update msg model =
             )
 
         Increment b ->
-            ( { model | cart = increment model.cart b }
+            ( { model | cart = increment b model.cart }
             , Cmd.none
             )
 
         Decrement b ->
-            ( { model | cart = decrement model.cart b }
+            ( { model | cart = decrement b model.cart }
             , Cmd.none
             )
 
@@ -160,14 +171,6 @@ view model =
 
 bookComponent : Book -> Cart -> Html Msg
 bookComponent book cart =
-    let
-        ( buttonClass, clickEvent, buttonText ) =
-            if inCart book.bookID cart then
-                ( "btn remove", Remove book.bookID, "Remove" )
-
-            else
-                ( "btn add", Add book.bookID, "Add to cart" )
-    in
     div [ class "book" ]
         [ div [] [ img [ src <| "%PUBLIC_URL%" ++ book.cover, alt book.title ] [] ]
         , div [ class "book-info" ]
@@ -178,17 +181,23 @@ bookComponent book cart =
             , div [ class "book-price" ] [ text <| "$" ++ String.fromInt book.price ]
             ]
         , div [ class "buttons" ]
-            [ button
-                [ class buttonClass
-                , onClick clickEvent
-                ]
-                [ text buttonText
-                ]
-            , button [ onClick (Decrement book.bookID) ] [ text "-" ]
-            , text (String.fromInt (getQuantity book.bookID cart))
-            , button [ onClick (Increment book.bookID) ] [ text "+" ]
-            ]
+            [ bookCartButton book cart ]
         ]
+
+
+bookCartButton : Book -> Cart -> Html Msg
+bookCartButton book cart =
+    case inCart book.bookID cart of
+        True ->
+            div []
+                [ button [ onClick (Decrement book.bookID) ] [ text "-" ]
+                , text (String.fromInt (getQuantity book.bookID cart))
+                , button [ onClick (Increment book.bookID) ] [ text "+" ]
+                , button [ class "btn remove", onClick <| Remove book.bookID ] [ text "Remove from cart" ]
+                ]
+
+        False ->
+            button [ class "btn add", onClick <| Add book.bookID ] [ text "Add to cart" ]
 
 
 cartView : Model -> Html Msg
@@ -244,12 +253,41 @@ getPrice bookID quant bookList =
 
 cartTotalView : Model -> Int
 cartTotalView model =
-    List.sum (List.map (\item -> getPrice item.id item.quantity model.books) model.cart)
+    let
+        totals =
+            List.map (\cartItem -> bookTotal cartItem model.books) model.cart
+
+        _ =
+            Debug.log "totals" totals
+    in
+    List.sum totals
 
 
 
+-- foldl : (a -> b -> b) -> b -> List a -> b
+--
+-- Reduce a list from the left.
+--
+-- foldl (+)  0  [1,2,3] == 6
+-- foldl (::) [] [1,2,3] == [3,2,1]
+--
+-- List.sum (List.map (\item -> getPrice item.id item.quantity model.books) model.cart)
 -- List.foldr (\item -> getPrice item.id item.quantity model.books) 0 model.cart
 ---- PROGRAM ----
+
+
+bookTotal : CartItem -> List Book -> Int
+bookTotal cartItem books =
+    let
+        mBook =
+            ListX.find (\book -> book.bookID == cartItem.id) books
+    in
+    case mBook of
+        Just book ->
+            book.price * cartItem.quantity
+
+        Nothing ->
+            0
 
 
 main : Program () Model Msg
