@@ -34,13 +34,14 @@ removeFromCart bookID cart =
     List.filter (\cartItem -> cartItem.id /= bookID) cart
 
 
+findItemInCart : BookID -> Cart -> Maybe CartItem
+findItemInCart bookID cart =
+    ListX.find (\cartItem -> cartItem.id == bookID) cart
+
+
 addToCart : BookID -> Cart -> Cart
 addToCart bookID cart =
-    let
-        mCartItem =
-            ListX.find (\cartItem -> cartItem.id == bookID) cart
-    in
-    case mCartItem of
+    case findItemInCart bookID cart of
         Just cartItem ->
             cart
 
@@ -55,11 +56,7 @@ addToCart bookID cart =
 
 increment : BookID -> Cart -> Cart
 increment bookID cart =
-    let
-        mCartItem =
-            ListX.find (\cartItem -> cartItem.id == bookID) cart
-    in
-    case mCartItem of
+    case findItemInCart bookID cart of
         Just cartItem ->
             ListX.setIf (\item -> item.id == bookID) { cartItem | quantity = cartItem.quantity + 1 } cart
 
@@ -69,11 +66,7 @@ increment bookID cart =
 
 decrement : BookID -> Cart -> Cart
 decrement bookID cart =
-    let
-        mCartItem =
-            ListX.find (\cartItem -> cartItem.id == bookID) cart
-    in
-    case mCartItem of
+    case findItemInCart bookID cart of
         Just cartItem ->
             case cartItem.quantity > 1 of
                 True ->
@@ -86,8 +79,8 @@ decrement bookID cart =
             cart
 
 
-getQuantity : BookID -> Cart -> Int
-getQuantity bookID cart =
+itemQuantity : BookID -> Cart -> Int
+itemQuantity bookID cart =
     case ListX.find (\c -> c.id == bookID) cart of
         Nothing ->
             0
@@ -177,7 +170,7 @@ bookCartButton book cart =
         True ->
             div []
                 [ button [ onClick (Decrement book.bookID) ] [ text "-" ]
-                , text (String.fromInt (getQuantity book.bookID cart))
+                , text (String.fromInt (itemQuantity book.bookID cart))
                 , button [ onClick (Increment book.bookID) ] [ text "+" ]
                 , button [ class "btn remove", onClick <| Remove book.bookID ] [ text "Remove from cart" ]
                 ]
@@ -242,9 +235,6 @@ cartTotalView model =
     let
         totals =
             List.map (\cartItem -> bookTotal cartItem model.books) model.cart
-
-        _ =
-            Debug.log "totals" totals
     in
     List.sum totals
 
