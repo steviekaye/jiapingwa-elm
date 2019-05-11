@@ -96,11 +96,6 @@ getQuantity bookID cart =
             r.quantity
 
 
-findBook : CartItem -> List Book -> Maybe Book
-findBook cartItem books =
-    find (\book -> book.bookID == cartItem.id) books
-
-
 inCart : BookID -> Cart -> Bool
 inCart bookID cart =
     List.any (\cartItem -> cartItem.id == bookID) cart
