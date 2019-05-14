@@ -81,7 +81,7 @@ decrement bookID cart =
 
 itemQuantity : BookID -> Cart -> Int
 itemQuantity bookID cart =
-    case ListX.find (\c -> c.id == bookID) cart of
+    case findItemInCart bookID cart of
         Nothing ->
             0
 
